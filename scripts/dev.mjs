@@ -2,6 +2,14 @@
 // Zero dependencies: two child processes sharing this terminal; Ctrl+C stops both.
 import { spawn } from "node:child_process";
 
+// The server's .ts files run on Node's built-in type stripping (22.6+, flag-free from 22.18);
+// Vite 8 needs 22.12+. Fail clearly here rather than leave Vite proxying to a server that never started.
+const [major, minor] = process.versions.node.split(".").map(Number);
+if (major < 22 || (major === 22 && minor < 12)) {
+    console.error(`[dev] Node ${process.versions.node} is too old: this project needs Node 22.12 or later.`);
+    process.exit(1);
+}
+
 const isWindows = process.platform === "win32";
 const procs = [
     ["server", "npm", ["run", "dev:server"]],
