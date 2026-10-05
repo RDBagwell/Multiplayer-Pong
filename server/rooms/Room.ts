@@ -232,13 +232,13 @@ export class Room {
     // Simulation
     // -------------------------------------------------------------------------
 
-    /** Steps as many ticks as the time since the last call allows, and runs timers. */
-    advance(now: number): void {
+    /** Steps as many ticks as the time since the last call allows, and runs timers. Returns the ticks stepped. */
+    advance(now: number): number {
         const elapsed = this.lastAdvance === null ? 0 : now - this.lastAdvance;
         this.lastAdvance = now;
         if (this.hasConnectedHuman()) this.lastHumanAt = now;
         this.runTimers(now);
-        if (!this.game || this.status === "waiting" || this.status === "closed") return;
+        if (!this.game || this.status === "waiting" || this.status === "closed") return 0;
 
         this.accumulator += Math.max(0, elapsed);
         if (this.accumulator > this.config.maxCatchUpMs) {
@@ -247,10 +247,13 @@ export class Room {
             this.skippedTicks += skip;
             this.accumulator -= skip * TICK_MS;
         }
+        let ticks = 0;
         while (this.accumulator >= TICK_MS) {
             this.accumulator -= TICK_MS;
             this.tick();
+            ticks++;
         }
+        return ticks;
     }
 
     /**
