@@ -1,12 +1,17 @@
 import "./styles.css";
 import { io } from "socket.io-client";
 import { TICK_RATE } from "../../shared/constants.ts";
-import type { Ack, RoomInfo } from "../../shared/protocol.ts";
+import type { Ack, Difficulty, RoomInfo } from "../../shared/protocol.ts";
+import { Sound } from "./audio/Sound.ts";
+import { SERVER_URL } from "./config.ts";
 import { Controls } from "./input/Controls.ts";
 import { Connection } from "./net/Connection.ts";
 import { NetworkSimulator } from "./net/NetworkSimulator.ts";
+import { ServerStatus } from "./net/ServerStatus.ts";
 import { Session, type TokenStore } from "./net/Session.ts";
 import { GameClient, type ClientView } from "./netcode/GameClient.ts";
+import { OfflineMatch } from "./offline/OfflineMatch.ts";
+import { Effects } from "./render/Effects.ts";
 import { Renderer, type Overlay } from "./render/Renderer.ts";
 import { el } from "./ui/dom.ts";
 import { DEFAULT_LAB, LabPanel, type LabSettings } from "./ui/LabPanel.ts";
@@ -62,6 +67,22 @@ function loadLab(): LabSettings {
     }
 }
 
+function loadFlag(key: string): boolean {
+    try {
+        return localStorage.getItem(key) === "1";
+    } catch {
+        return false;
+    }
+}
+
+function saveFlag(key: string, value: boolean): void {
+    try {
+        localStorage.setItem(key, value ? "1" : "0");
+    } catch {
+        // Storage unavailable.
+    }
+}
+
 function saveLab(settings: LabSettings): void {
     try {
         localStorage.setItem("pong.lab", JSON.stringify(settings));
@@ -73,7 +94,11 @@ function saveLab(settings: LabSettings): void {
 // --- Wiring -----------------------------------------------------------------
 
 const labSettings = loadLab();
-const socket = io({ transports: ["websocket"] });
+const socket = io(SERVER_URL, { transports: ["websocket"] });
+const status = new ServerStatus(performance.now());
+socket.on("connect", () => status.onConnect());
+socket.on("disconnect", () => status.onDisconnect());
+socket.on("connect_error", () => status.onError());
 const netsim = new NetworkSimulator(labSettings.conditions);
 const connection = new Connection(socket, netsim, now);
 const session = new Session(connection, tokenStore);
@@ -96,10 +121,31 @@ const renderer = new Renderer(canvas);
 const controls = new Controls(renderer, canvas);
 game.input = (paddleY) => controls.direction(paddleY);
 
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const effects = new Effects(reducedMotion.matches);
+reducedMotion.addEventListener("change", () => (effects.reducedMotion = reducedMotion.matches));
+const sound = new Sound(loadFlag("pong.muted"));
+hud.setMuted(sound.muted);
+// Browsers allow audio only after a user gesture.
+for (const type of ["pointerdown", "keydown"]) window.addEventListener(type, () => sound.unlock(), { capture: true });
+function toggleMute(): void {
+    sound.muted = !sound.muted;
+    hud.setMuted(sound.muted);
+    saveFlag("pong.muted", sound.muted);
+}
+hud.muteButton.addEventListener("click", toggleMute);
+
 // --- App state ----------------------------------------------------------------
 
-type Screen = "menu" | "queue" | "room";
+type Screen = "menu" | "queue" | "room" | "offline";
 let screen: Screen = "menu";
+/** The match running in this browser when playing offline. */
+let offline: OfflineMatch | null = null;
+
+function serverView() {
+    const t = now();
+    return { online: status.isOnline(t), offerOffline: status.offerOffline(t), label: status.label(t) };
+}
 let pauseDeadline: number | null = null;
 let resumeDeadline: number | null = null;
 
@@ -111,9 +157,30 @@ function showToast(message: string): void {
 
 function toMenu(notice?: string): void {
     screen = "menu";
+    offline = null;
     game.detach();
+    effects.reset();
     hud.root.hidden = true;
-    screens.menu(menuActions, notice);
+    hud.labButton.hidden = false;
+    screens.menu(menuActions, serverView(), notice);
+}
+
+/** Starts a match against the computer that runs entirely in this browser. */
+function startOffline(difficulty: Difficulty): void {
+    void session.cancelQueue().catch(() => {});
+    tokenStore.clear();
+    offline = new OfflineMatch(difficulty);
+    offline.input = (paddleY) => controls.direction(paddleY);
+    screen = "offline";
+    effects.reset();
+    screens.hide();
+    setLabOpen(false);
+    hud.root.hidden = false;
+    hud.labButton.hidden = true; // the lab needs a network to play with
+    hud.rematchButton.hidden = true;
+    renderer.layout(0);
+    controls.enabled = true;
+    controls.seat = 0;
 }
 
 async function enterRoom(request: Promise<Ack>): Promise<void> {
@@ -130,7 +197,8 @@ function showRoom(): void {
 }
 
 const menuActions = {
-    playBot: (difficulty: "easy" | "medium" | "hard") => void enterRoom(session.playBot(difficulty)),
+    playBot: (difficulty: Difficulty) => void enterRoom(session.playBot(difficulty)),
+    playOffline: (difficulty: Difficulty) => startOffline(difficulty),
     quickMatch: async () => {
         const ack = await session.quickMatch();
         if (!ack.ok) return showToast(ack.error);
@@ -171,20 +239,29 @@ function onRoom(info: RoomInfo): void {
 }
 
 async function leave(): Promise<void> {
+    if (screen === "offline") return toMenu();
     await session.leave();
     toMenu();
 }
 
 hud.leaveButton.addEventListener("click", () => void leave());
 function setLabOpen(open: boolean): void {
+    if (open && screen === "offline") return;
     lab.open = open;
     hud.labButton.setAttribute("aria-expanded", String(open));
 }
 hud.labButton.addEventListener("click", () => setLabOpen(!lab.open));
 window.addEventListener("keydown", (e) => {
-    if (e.code === "KeyL" && screen === "room" && !(e.target instanceof HTMLInputElement && e.target.type === "text")) setLabOpen(!lab.open);
+    if (e.target instanceof HTMLInputElement && e.target.type === "text") return;
+    if (e.code === "KeyL" && screen === "room") setLabOpen(!lab.open);
+    if (e.code === "KeyM") toggleMute();
 });
 hud.rematchButton.addEventListener("click", async () => {
+    if (screen === "offline" && offline) {
+        offline.rematch();
+        effects.reset();
+        return;
+    }
     const ack = await session.rematch();
     if (!ack.ok) showToast(ack.error);
 });
@@ -198,6 +275,7 @@ connection.on("disconnect", () => {
     if (screen === "room") showToast("Connection lost. Reconnecting…");
 });
 connection.on("connect", async () => {
+    if (screen === "menu") screens.setServer(serverView());
     // After a reload or a dropped connection, ask for our seat back with the saved token.
     const watching = screen === "room" && game.room?.you === -1 ? game.room.code : null;
     if (tokenStore.load()) {
@@ -223,7 +301,11 @@ function handleLink(): void {
 // --- Loops ----------------------------------------------------------------------
 
 // Netcode: every 4 ms, independent of the display (the simulation itself is fixed at 60 Hz inside).
-setInterval(() => game.update(now()), 4);
+setInterval(() => {
+    const t = now();
+    game.update(t);
+    offline?.update(t);
+}, 4);
 
 function overlayFor(view: ClientView | null, info: RoomInfo | null): Overlay {
     if (!view || !info) return {};
@@ -247,17 +329,30 @@ function overlayFor(view: ClientView | null, info: RoomInfo | null): Overlay {
 }
 
 let lastStatsAt = 0;
+let lastStatusAt = 0;
 
 function frame(): void {
     const t = now();
-    const view = game.view(t);
-    const info = game.room;
-    if (screen === "room" && info && view) {
-        controls.paddleY = game.predictor.paddle.y;
+    if (screen === "menu" && t - lastStatusAt > 250) {
+        lastStatusAt = t;
+        screens.setServer(serverView());
+    }
+    const view = offline ? offline.view() : game.view(t);
+    const info = offline ? offline.info() : game.room;
+    const playing = (screen === "room" || screen === "offline") && info && view;
+    if (playing && offline) {
+        hud.rematchButton.hidden = !offline.over;
+        hud.rematchButton.disabled = false;
+        hud.rematchButton.textContent = "Rematch";
+    }
+    if (playing) {
+        controls.paddleY = offline ? offline.state.paddles[0].y : game.predictor.paddle.y;
+        for (const event of effects.update(view, t)) sound.play(event, info.you);
         const name = (seat: 0 | 1) => (seat === info.you ? `${info.seats[seat].label} (you)` : info.seats[seat].label);
         const watchers = info.spectators ? ` · ${info.spectators} watching` : "";
-        hud.set(name(0), name(1), `${view.score[0]} : ${view.score[1]}`, `${info.mode === "private" ? `Room ${info.code}` : ""}${watchers}`);
-        renderer.draw(view, lab.settings.showTruth, overlayFor(view, info));
+        const where = offline ? "Offline · in your browser" : info.mode === "private" ? `Room ${info.code}` : "";
+        hud.set(name(0), name(1), `${view.score[0]} : ${view.score[1]}`, `${where}${watchers}`);
+        renderer.draw(view, !offline && lab.settings.showTruth, overlayFor(view, info), effects.frame(t));
         if (lab.open && t - lastStatsAt > 250) {
             lastStatsAt = t;
             lab.updateStats(game.stats(t), info);

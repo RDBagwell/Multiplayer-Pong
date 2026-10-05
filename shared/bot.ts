@@ -1,7 +1,7 @@
-import { BALL_RADIUS, FIELD_HEIGHT, INPUT_LEVELS, PADDLE_FACE_X, PADDLE_HALF_HEIGHT, PADDLE_SPEED, TICK_DT } from "../../shared/constants.ts";
-import { clampDir, sweepBall } from "../../shared/physics.ts";
-import type { Difficulty } from "../../shared/protocol.ts";
-import type { BallState, GameState, Seat } from "../../shared/state.ts";
+import { BALL_RADIUS, FIELD_HEIGHT, INPUT_LEVELS, PADDLE_FACE_X, PADDLE_HALF_HEIGHT, PADDLE_SPEED, TICK_DT } from "./constants.ts";
+import { clampDir, sweepBall } from "./physics.ts";
+import type { Difficulty } from "./protocol.ts";
+import type { BallState, GameState, Seat } from "./state.ts";
 
 export interface BotProfile {
     /** How old the ball position the bot reacts to is (human reaction time). */
@@ -25,7 +25,8 @@ export const BOT_PROFILES: Record<Difficulty, BotProfile> = {
 export const BOT_LABELS: Record<Difficulty, string> = { easy: "Computer (easy)", medium: "Computer (medium)", hard: "Computer (hard)" };
 
 /**
- * A server-side opponent. It produces the same thing a human client does, an
+ * The computer opponent. It runs on the server in online bot matches, and in
+ * the browser in offline mode. It produces the same thing a human client does, an
  * input direction per tick, so the simulation can't tell it apart from a
  * player. It plays like a person: it reacts to where the ball was a moment
  * ago, works out where it will arrive, aims with some error, sometimes

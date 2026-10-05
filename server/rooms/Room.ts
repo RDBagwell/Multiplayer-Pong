@@ -2,7 +2,7 @@ import { TICK_MS, TICK_RATE } from "../../shared/constants.ts";
 import { encodeSnapshot, type Difficulty, type InputCommand, type RoomInfo, type RoomStatus } from "../../shared/protocol.ts";
 import { createInitialState, type GameState, type Seat, type TickInputs } from "../../shared/state.ts";
 import { step } from "../../shared/step.ts";
-import { BOT_LABELS, Bot } from "../bots/Bot.ts";
+import { BOT_LABELS, Bot } from "../../shared/bot.ts";
 import type { Config } from "../config.ts";
 import { generateToken, hashesEqual, hashToken, randomSeed } from "../security/random.ts";
 import { InputQueue, type ReceiveResult } from "./InputQueue.ts";
