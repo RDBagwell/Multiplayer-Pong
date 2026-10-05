@@ -34,3 +34,16 @@ jobs:
       - run: npm test -- --reporter=verbose
       - run: npm run build
       - run: npm audit --omit=dev
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
