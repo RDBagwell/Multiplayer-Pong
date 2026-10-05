@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { INPUT_LEVELS } from "../../shared/constants.ts";
 import { MatchQueue } from "../../server/rooms/MatchQueue.ts";
+import { seededRandom } from "../harness/harness.ts";
 import { privateMatch, sleep, startServer, waitFor, type TestClient, type TestEnv } from "../helpers.ts";
 
 let env: TestEnv;
@@ -94,17 +95,17 @@ describe("private rooms, bots and spectators", () => {
         expect(late.room!.you).toBe(-1);
     });
 
-    it("plays against the computer at every difficulty", async () => {
+    it("plays against the computer at every difficulty", { timeout: 60_000 }, async () => {
         // Seed 100: seat 0 (the human) serves first, so the first shot goes to the bot.
-        env = await startServer({ seed: () => 100 });
+        env = await startServer({ seed: () => 100, botRandom: seededRandom(7) });
         for (const difficulty of ["easy", "medium", "hard"]) {
             const [c] = await connected(1);
             const res = await c.request("playBot", { difficulty });
             expect(res.ok).toBe(true);
             const info = await c.waitForRoom((r) => r.status === "playing");
             expect(info.seats[1]).toMatchObject({ kind: "bot", connected: true });
-            // The bot moves its paddle once the ball is served towards it.
-            await c.waitForSnapshot((s) => s.paddles[1].dir !== 0, 5000);
+            // The bot moves its paddle once the ball is in play (it may get one shot right without moving).
+            await waitFor(() => c.snapshots.some((s) => s.paddles[1].dir !== 0), 12_000, "the bot to move");
         }
     });
 });
