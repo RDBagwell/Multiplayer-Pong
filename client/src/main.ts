@@ -4,11 +4,12 @@ import { TICK_RATE } from "../../shared/constants.ts";
 import type { Ack, RoomInfo } from "../../shared/protocol.ts";
 import { Controls } from "./input/Controls.ts";
 import { Connection } from "./net/Connection.ts";
-import { NetworkSimulator, PERFECT_NETWORK } from "./net/NetworkSimulator.ts";
+import { NetworkSimulator } from "./net/NetworkSimulator.ts";
 import { Session, type TokenStore } from "./net/Session.ts";
-import { ALL_ON, GameClient, type ClientView } from "./netcode/GameClient.ts";
+import { GameClient, type ClientView } from "./netcode/GameClient.ts";
 import { Renderer, type Overlay } from "./render/Renderer.ts";
 import { el } from "./ui/dom.ts";
+import { DEFAULT_LAB, LabPanel, type LabSettings } from "./ui/LabPanel.ts";
 import { Hud, Screens } from "./ui/Screens.ts";
 
 // Refuse to run inside a frame (clickjacking); the server also sends frame-ancestors 'none'.
@@ -43,19 +44,51 @@ const tokenStore: TokenStore = {
     },
 };
 
+/** Lab settings are a per-browser convenience, remembered in localStorage when it's available. */
+function loadLab(): LabSettings {
+    try {
+        const raw = JSON.parse(localStorage.getItem("pong.lab") ?? "null");
+        const c = raw?.conditions;
+        const t = raw?.toggles;
+        const num = (v: unknown, max: number) => (typeof v === "number" && v >= 0 && v <= max ? v : 0);
+        if (!c || !t) return structuredClone(DEFAULT_LAB);
+        return {
+            conditions: { latencyMs: num(c.latencyMs, 500), jitterMs: num(c.jitterMs, 150), loss: num(c.loss, 0.3) },
+            toggles: { prediction: t.prediction !== false, reconciliation: t.reconciliation !== false, interpolation: t.interpolation !== false },
+            showTruth: raw.showTruth === true,
+        };
+    } catch {
+        return structuredClone(DEFAULT_LAB);
+    }
+}
+
+function saveLab(settings: LabSettings): void {
+    try {
+        localStorage.setItem("pong.lab", JSON.stringify(settings));
+    } catch {
+        // Storage unavailable: settings last for this page only.
+    }
+}
+
 // --- Wiring -----------------------------------------------------------------
 
+const labSettings = loadLab();
 const socket = io({ transports: ["websocket"] });
-const netsim = new NetworkSimulator(PERFECT_NETWORK);
+const netsim = new NetworkSimulator(labSettings.conditions);
 const connection = new Connection(socket, netsim, now);
 const session = new Session(connection, tokenStore);
-const game = new GameClient(connection, ALL_ON);
+const game = new GameClient(connection, labSettings.toggles);
+const lab = new LabPanel(labSettings, (settings) => {
+    netsim.conditions = { ...settings.conditions };
+    game.toggles = { ...settings.toggles };
+    saveLab(settings);
+});
 
 const canvas = el("canvas", { class: "field", "aria-label": "Pong field" });
 const hud = new Hud();
 const screens = new Screens();
 const toast = el("div", { class: "toast", role: "status", "aria-live": "polite", hidden: true });
-const stage = el("main", { class: "stage" }, el("div", { class: "field-wrap" }, canvas));
+const stage = el("main", { class: "stage" }, el("div", { class: "field-wrap" }, canvas), lab.root);
 const app = el("div", { class: "app" }, hud.root, stage, screens.root, toast);
 document.body.appendChild(app);
 
@@ -143,6 +176,14 @@ async function leave(): Promise<void> {
 }
 
 hud.leaveButton.addEventListener("click", () => void leave());
+function setLabOpen(open: boolean): void {
+    lab.open = open;
+    hud.labButton.setAttribute("aria-expanded", String(open));
+}
+hud.labButton.addEventListener("click", () => setLabOpen(!lab.open));
+window.addEventListener("keydown", (e) => {
+    if (e.code === "KeyL" && screen === "room" && !(e.target instanceof HTMLInputElement && e.target.type === "text")) setLabOpen(!lab.open);
+});
 hud.rematchButton.addEventListener("click", async () => {
     const ack = await session.rematch();
     if (!ack.ok) showToast(ack.error);
@@ -205,6 +246,8 @@ function overlayFor(view: ClientView | null, info: RoomInfo | null): Overlay {
     return {};
 }
 
+let lastStatsAt = 0;
+
 function frame(): void {
     const t = now();
     const view = game.view(t);
@@ -214,7 +257,11 @@ function frame(): void {
         const name = (seat: 0 | 1) => (seat === info.you ? `${info.seats[seat].label} (you)` : info.seats[seat].label);
         const watchers = info.spectators ? ` · ${info.spectators} watching` : "";
         hud.set(name(0), name(1), `${view.score[0]} : ${view.score[1]}`, `${info.mode === "private" ? `Room ${info.code}` : ""}${watchers}`);
-        renderer.draw(view, false, overlayFor(view, info));
+        renderer.draw(view, lab.settings.showTruth, overlayFor(view, info));
+        if (lab.open && t - lastStatsAt > 250) {
+            lastStatsAt = t;
+            lab.updateStats(game.stats(t), info);
+        }
     } else {
         renderer.draw(null, false);
     }

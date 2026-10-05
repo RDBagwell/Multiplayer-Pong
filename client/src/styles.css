@@ -276,3 +276,232 @@ input.link {
 .toast[hidden] {
     display: none;
 }
+
+/* --- Network lab ------------------------------------------------------------- */
+
+.lab {
+    width: 340px;
+    flex: none;
+    overflow-y: auto;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    padding: 16px;
+}
+
+.lab[hidden] {
+    display: none;
+}
+
+.lab h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.lab h3 {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+.lab section {
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+}
+
+.lab-intro {
+    color: var(--muted);
+    margin: 4px 0 12px;
+    font-size: 0.9rem;
+}
+
+.presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.presets button {
+    min-height: 32px;
+    padding: 0.3em 0.7em;
+    font-size: 0.85rem;
+}
+
+.presets button[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.slider {
+    margin: 10px 0;
+}
+
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.label-row .value {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}
+
+.slider input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    min-height: 28px;
+}
+
+.switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+}
+
+.switch input {
+    appearance: none;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--line);
+    position: relative;
+    cursor: pointer;
+    flex: none;
+    margin: 0;
+    transition: background 0.15s;
+}
+
+.switch input::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text);
+    transition: transform 0.15s;
+}
+
+.switch input:checked {
+    background: var(--accent);
+}
+
+.switch input:checked::after {
+    transform: translateX(18px);
+    background: var(--accent-ink);
+}
+
+.switch input:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.switch label {
+    cursor: pointer;
+}
+
+.tip-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+button.tip {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: var(--muted);
+}
+
+.tip-text {
+    display: none;
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 6px);
+    left: -120px;
+    width: 260px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.tip-wrap:hover .tip-text,
+.tip-wrap:focus-within .tip-text,
+.tip-wrap.open .tip-text {
+    display: block;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 0;
+}
+
+.stats div {
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.stats dt {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.stats dd {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.server-info {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: 10px 0 0;
+}
+
+/* Phones and narrow windows: the lab becomes a bottom sheet over the field. */
+@media (max-width: 760px) {
+    .lab {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: auto;
+        max-height: 60%;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        border-radius: 14px 14px 0 0;
+        box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5);
+        z-index: 5;
+    }
+
+    .tip-text {
+        left: auto;
+        right: -40px;
+        width: min(260px, 70vw);
+    }
+
+    .hud {
+        padding: 6px 12px;
+    }
+
+    .hud .info {
+        display: none;
+    }
+}

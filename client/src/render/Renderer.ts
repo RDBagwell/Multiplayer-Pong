@@ -173,6 +173,7 @@ export class Renderer {
         const cy = this.cssHeight / 2;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        ctx.lineJoin = "round";
         ctx.font = `700 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
         ctx.lineWidth = 6;
         ctx.strokeStyle = COLORS.background;
