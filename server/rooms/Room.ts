@@ -253,9 +253,14 @@ export class Room {
         }
     }
 
-    /** The room's current tick including the fraction elapsed towards the next (for clock sync), or -1. */
-    tickAt(): number {
-        return this.game ? this.game.tick + this.accumulator / TICK_MS : -1;
+    /**
+     * The room's tick at time `now`, including the fraction elapsed towards
+     * the next one (for clock sync), or -1 when no match is running.
+     */
+    tickAt(now: number): number {
+        if (!this.game || this.status === "waiting" || this.status === "closed") return -1;
+        const sinceAdvance = this.lastAdvance === null ? 0 : Math.max(0, now - this.lastAdvance);
+        return this.game.tick + (this.accumulator + sinceAdvance) / TICK_MS;
     }
 
     private tick(): void {
