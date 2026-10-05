@@ -76,9 +76,11 @@ export class SocketController {
         this.manager = manager;
         this.config = config;
         this.log = log;
-        this.joinLimiter = new KeyedRateLimiter(config.limits.joinPerIp);
-        this.createLimiter = new KeyedRateLimiter(config.limits.createPerIp);
-        this.connectLimiter = new KeyedRateLimiter(config.limits.connectPerIp);
+        // Limits run on the server's clock, so they also hold under the harness's virtual time.
+        const now = () => this.now();
+        this.joinLimiter = new KeyedRateLimiter(config.limits.joinPerIp, now);
+        this.createLimiter = new KeyedRateLimiter(config.limits.createPerIp, now);
+        this.connectLimiter = new KeyedRateLimiter(config.limits.connectPerIp, now);
         this.pruner = setInterval(() => {
             for (const limiter of [this.joinLimiter, this.createLimiter, this.connectLimiter]) limiter.prune();
         }, 60_000);
@@ -127,8 +129,8 @@ export class SocketController {
 
     private register(socket: GameSocket): void {
         socket.data.violations = 0;
-        socket.data.bucket = new TokenBucket(this.config.limits.socketEvents);
-        socket.data.sessionBucket = new TokenBucket(this.config.limits.sessionEvents);
+        socket.data.bucket = new TokenBucket(this.config.limits.socketEvents, () => this.now());
+        socket.data.sessionBucket = new TokenBucket(this.config.limits.sessionEvents, () => this.now());
         socket.data.membership = null;
         socket.data.member = {
             id: socket.id,
@@ -341,7 +343,8 @@ export class SocketController {
 
     private sync(socket: GameSocket, { t }: ClientPayload<"sync">): void {
         const { room } = this.current(socket);
-        socket.emit("syncReply", { t, st: this.now(), tk: room ? room.tickAt() : -1 });
+        const now = this.now();
+        socket.emit("syncReply", { t, st: now, tk: room ? room.tickAt(now) : -1 });
     }
 
     // -------------------------------------------------------------------------
