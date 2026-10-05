@@ -1,0 +1,23 @@
+{
+  // Shared simulation, server and tests. Node runs the .ts files directly
+  // (type stripping), so only erasable syntax is allowed: no enums,
+  // namespaces or parameter properties, and imports carry their .ts extension.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedIndexedAccess": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": ["shared", "server", "tests", "client/src/netcode", "client/src/net", "vite.config.ts", "vitest.config.ts"]
+}
