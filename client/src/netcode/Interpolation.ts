@@ -29,7 +29,8 @@ import type { BallState } from "../../../shared/state.ts";
  * one for up to 100 ms, then holds still until data arrives.
  */
 
-export type InterpolationMode = "waiting" | "interpolating" | "extrapolating" | "holding" | "raw";
+/** "local": an offline match, simulated in the browser (no network at all). */
+export type InterpolationMode = "waiting" | "interpolating" | "extrapolating" | "holding" | "raw" | "local";
 
 export interface EntityView {
     /** The (fractional) server tick being drawn. */

@@ -2,6 +2,7 @@ import { BALL_RADIUS, FIELD_HEIGHT, FIELD_WIDTH, PADDLE_FACE_X, PADDLE_HALF_HEIG
 import type { Snapshot } from "../../../shared/protocol.ts";
 import type { Seat } from "../../../shared/state.ts";
 import type { ClientView } from "../netcode/GameClient.ts";
+import type { FxFrame } from "./Effects.ts";
 
 const COLORS = {
     background: "#0b0e14",
@@ -101,13 +102,13 @@ export class Renderer {
         return { x: this.matrix.c, y: this.matrix.d };
     }
 
-    draw(view: ClientView | null, showTruth: boolean, overlay: Overlay = {}): void {
+    draw(view: ClientView | null, showTruth: boolean, overlay: Overlay = {}, fx?: FxFrame): void {
         const ctx = this.ctx;
         ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
         ctx.fillStyle = COLORS.background;
         ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
 
-        this.toField();
+        this.toField(fx?.shake);
         ctx.fillStyle = COLORS.field;
         ctx.fillRect(0, 0, FIELD_WIDTH, FIELD_HEIGHT);
         ctx.strokeStyle = COLORS.border;
@@ -124,9 +125,19 @@ export class Renderer {
         if (view) {
             if (showTruth) this.drawTruth(view.truth);
             for (const seat of [0, 1] as const) {
-                this.paddle(seat, view.paddleY[seat], seat === view.you ? COLORS.own : COLORS.paddle);
+                this.paddle(seat, view.paddleY[seat], seat === view.you ? COLORS.own : COLORS.paddle, fx?.flash[seat] ?? 0);
             }
             const showBall = view.phase === "playing" || view.phase === "countdown";
+            if (showBall && fx?.trail.length) {
+                // A fading trail of recent positions.
+                const n = fx.trail.length;
+                fx.trail.forEach((p, i) => {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${(0.22 * (i + 1)) / n})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, BALL_RADIUS * (0.45 + (0.45 * (i + 1)) / n), 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
             if (showBall) {
                 ctx.fillStyle = COLORS.ball;
                 ctx.beginPath();
@@ -157,13 +168,24 @@ export class Renderer {
         ctx.restore();
     }
 
-    private paddle(seat: Seat, y: number, color: string): void {
+    private paddle(seat: Seat, y: number, color: string, flash: number): void {
         const ctx = this.ctx;
         const x = seat === 0 ? PADDLE_FACE_X[0] - PADDLE_WIDTH : PADDLE_FACE_X[1];
+        ctx.save();
+        if (flash > 0) {
+            // A brief glow when the ball hits it.
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 24 * flash * this.dpr;
+        }
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.roundRect(x, y - PADDLE_HALF_HEIGHT, PADDLE_WIDTH, PADDLE_HALF_HEIGHT * 2, 4);
         ctx.fill();
+        if (flash > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.7 * flash})`;
+            ctx.fill();
+        }
+        ctx.restore();
     }
 
     private centredText(title: string, subtitle?: string): void {
@@ -190,10 +212,10 @@ export class Renderer {
         }
     }
 
-    private toField(): void {
+    private toField(offset: { x: number; y: number } = { x: 0, y: 0 }): void {
         const m = this.matrix;
         const d = this.dpr;
-        this.ctx.setTransform(m.a * d, m.b * d, m.c * d, m.d * d, m.e * d, m.f * d);
+        this.ctx.setTransform(m.a * d, m.b * d, m.c * d, m.d * d, (m.e + offset.x) * d, (m.f + offset.y) * d);
     }
 
     private toScreen(): void {

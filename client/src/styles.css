@@ -171,7 +171,8 @@ canvas.field {
     position: fixed;
     inset: 0;
     display: grid;
-    place-items: center;
+    /* "safe": a card taller than the window scrolls instead of being cut off at the top. */
+    place-items: safe center;
     padding: 16px;
     background: rgba(5, 7, 11, 0.72);
     overflow-y: auto;
@@ -503,5 +504,191 @@ button.tip {
 
     .hud .info {
         display: none;
+    }
+}
+
+/* --- Landing (retro) ------------------------------------------------------------ */
+
+:root {
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --amber: #ffb547;
+}
+
+.card.landing {
+    width: min(920px, 100%);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+        var(--panel);
+    border: 2px solid var(--line);
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--line);
+}
+
+.brand h1 {
+    margin: 0;
+    font-family: var(--mono);
+    font-weight: 800;
+    font-size: clamp(2rem, 7vw, 3.4rem);
+    letter-spacing: 0.08em;
+    line-height: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.4em;
+}
+
+.brand .logo {
+    text-shadow: 3px 3px 0 #000, 0 0 18px rgba(94, 234, 212, 0.25);
+}
+
+.brand .logo.accent {
+    color: var(--accent);
+}
+
+.tagline {
+    font-family: var(--mono);
+    color: var(--amber);
+    margin: 10px 0 6px;
+    letter-spacing: 0.02em;
+}
+
+.server-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 4px 0 0;
+}
+
+.dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex: none;
+}
+
+.dot.on {
+    background: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+}
+
+.dot.off {
+    background: var(--amber);
+    animation: blink 1.2s steps(2, start) infinite;
+}
+
+@keyframes blink {
+    to {
+        visibility: hidden;
+    }
+}
+
+.offer {
+    margin-top: 16px;
+    border: 2px dashed var(--amber);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.offer[hidden] {
+    display: none;
+}
+
+.offer p {
+    margin: 0;
+    flex: 1 1 260px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.tile {
+    background: var(--bg);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card .tile h2 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+}
+
+.tile p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.tile .row {
+    margin-top: auto;
+}
+
+.tile .row + .row {
+    margin-top: 0;
+}
+
+.lab-explainer {
+    border-style: dashed;
+}
+
+.segments {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+button.segment {
+    border: 0;
+    border-radius: 0;
+    min-height: 34px;
+    padding: 0.3em 0.9em;
+    background: transparent;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+}
+
+button.segment + button.segment {
+    border-left: 1px solid var(--line);
+}
+
+button.segment[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+.card.landing .hint {
+    font-family: var(--mono);
+    text-align: center;
+}
+
+.hud .score {
+    font-family: var(--mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dot.off {
+        animation: none;
     }
 }
