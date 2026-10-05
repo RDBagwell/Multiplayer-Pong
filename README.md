@@ -2,7 +2,16 @@
 
 **A multiplayer Pong that shows its work.** The game is simple on purpose: it is a showcase for the netcode real online games use (a server-authoritative simulation, clock sync, client-side prediction, server reconciliation and entity interpolation), with a built-in **network lab** where you add lag, jitter and packet loss and switch each technique off to feel why it exists.
 
-<!-- SCREENSHOTS -->
+![The network lab during an online match on simulated "Bad Wi-Fi": the dashed outline is the server's latest snapshot, the solid ball is what the client draws, a fraction of a second behind it](docs/images/network-lab.png)
+
+| | |
+|---|---|
+| ![Landing screen](docs/images/landing.png) | ![Landing screen while the server is waking up, offering an offline match](docs/images/landing-waking.png) |
+| **Landing screen.** Four ways in, and what the lab is. | **Server asleep?** Play the computer offline meanwhile. |
+| ![Interpolation switched off: the ball sits on the server's snapshot and its trail shows the 20 Hz steps](docs/images/network-lab-interpolation-off.png) | ![On a phone in portrait the field turns so your paddle is at the bottom](docs/images/phone.png) |
+| **Interpolation off.** The ball jumps from snapshot to snapshot; the gaps in its trail are the 20 Hz updates. | **Phone, portrait.** Touch-drag on your half. |
+
+*Screenshots captured from real matches with Playwright and Chromium (`scripts/screenshots.ts`). There's no GIF: this environment can record WebM video but has no GIF encoder.*
 
 **Play it:** <https://rdbagwell.github.io/Multiplayer-Pong/> once deployed (see [Deploying](docs/DEPLOY.md)). The server sleeps when idle on its free tier; while it wakes up, the page offers a match against the computer that runs entirely in your browser.
 

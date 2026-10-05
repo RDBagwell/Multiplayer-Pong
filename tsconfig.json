@@ -19,5 +19,5 @@
     "skipLibCheck": true,
     "isolatedModules": true
   },
-  "include": ["shared", "server", "tests", "playwright.config.ts", "client/src/netcode", "client/src/net", "client/src/offline", "client/src/render/Effects.ts", "vite.config.ts", "vitest.config.ts"]
+  "include": ["shared", "server", "tests", "scripts", "playwright.config.ts", "client/src/netcode", "client/src/net", "client/src/offline", "client/src/render/Effects.ts", "vite.config.ts", "vitest.config.ts"]
 }
