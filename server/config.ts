@@ -38,6 +38,8 @@ export interface Config {
     loopIntervalMs: number;
     /** If the server falls further behind than this, it skips time instead of fast-forwarding. */
     maxCatchUpMs: number;
+    /** Log loop timing stats this often (ms); 0 = off. For load tests. */
+    loopStatsMs: number;
 
     /** How long a disconnected player's seat is held before the match is forfeited. */
     reconnectGraceMs: number;
@@ -108,6 +110,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         snapshotRate,
         loopIntervalMs: 4,
         maxCatchUpMs: 250,
+        loopStatsMs: int(env.LOOP_STATS_MS, 0),
 
         reconnectGraceMs: 30_000,
         resumeDelayMs: 1_500,

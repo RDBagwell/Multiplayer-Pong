@@ -105,3 +105,4 @@ dist
 client/dist-e2e
 test-results
 playwright-report
+_site
