@@ -48,13 +48,16 @@ async function wiggle(page: Page, ms: number): Promise<void> {
     }
 }
 
-/** Waits until the ball is in play and away from the centre, so the shot shows a rally. */
+/**
+ * Waits for the next point, then for the pause and the 3-2-1 countdown after it
+ * (0.75 s + 1.5 s) and about half a second of the serve, so the shot shows the
+ * ball crossing the field.
+ */
 async function midRally(page: Page): Promise<void> {
-    for (let i = 0; i < 60; i++) {
-        const score = await page.locator(".hud .score").innerText();
-        await sleep(250);
-        if ((await page.locator(".hud .score").innerText()) === score && i > 8) return;
-    }
+    const score = page.locator(".hud .score");
+    const before = await score.innerText();
+    for (let i = 0; i < 400 && (await score.innerText()) === before; i++) await sleep(50);
+    await sleep(2800);
 }
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -94,13 +97,13 @@ try {
         await page.getByRole("button", { name: "Network lab" }).click();
         await page.getByRole("button", { name: "Bad Wi-Fi" }).click();
         await page.getByLabel("Show the truth").check();
-        await wiggle(page, 6000);
+        await wiggle(page, 3000);
         await midRally(page);
         await page.screenshot({ path: `${OUT}/network-lab.png` });
 
         // 3b. Same match with interpolation off.
         await page.getByRole("switch", { name: "Interpolation" }).uncheck();
-        await wiggle(page, 2500);
+        await midRally(page);
         await page.screenshot({ path: `${OUT}/network-lab-interpolation-off.png` });
         await page.close();
     }
