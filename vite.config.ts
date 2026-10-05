@@ -13,7 +13,9 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         proxy: {
-            "/socket.io": { target: "ws://localhost:3000", ws: true },
+            // 127.0.0.1, not localhost: localhost can resolve to IPv6 (::1) while the
+            // server is only reachable on IPv4, which shows up as "ECONNREFUSED ::1:3000".
+            "/socket.io": { target: `ws://127.0.0.1:${Number(process.env.PORT) || 3000}`, ws: true },
         },
     },
 });
