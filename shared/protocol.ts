@@ -154,8 +154,14 @@ export const roomInfoSchema = z.strictObject({
     you: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
     seats: z.tuple([seatInfoSchema, seatInfoSchema]),
     spectators: int.min(0),
-    /** While paused: who is missing, and in how many ms the match is forfeited. */
-    pause: z.strictObject({ seat: z.union([z.literal(0), z.literal(1)]), forfeitInMs: finite }).nullable(),
+    /** While paused: who is (or was) missing, when the match is forfeited, and when play resumes once they're back. */
+    pause: z
+        .strictObject({
+            seat: z.union([z.literal(0), z.literal(1)]),
+            forfeitInMs: finite,
+            resumeInMs: finite.nullable(),
+        })
+        .nullable(),
     /** Set when the match ended by forfeit: the seat that forfeited. */
     forfeited: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
     /** Why the room closed, when status is "closed". */
