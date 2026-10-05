@@ -5,14 +5,14 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22.12"
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:server": "node --watch-path=server --watch-path=shared server/index.ts",
+    "dev:server": "node --experimental-strip-types --disable-warning=ExperimentalWarning --watch-path=server --watch-path=shared server/index.ts",
     "dev:client": "vite",
     "build": "vite build",
-    "start": "node server/index.ts",
+    "start": "node --experimental-strip-types --disable-warning=ExperimentalWarning server/index.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p client/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -6,7 +6,7 @@ The game is deliberately simple so the networking is the story. This is a rebuil
 
 ## Run it
 
-Requires Node 22.18 or later (the server runs its TypeScript directly with Node's built-in type stripping).
+Requires Node 22.12 or later. The server runs its TypeScript directly with Node's built-in type stripping (`--experimental-strip-types`, set in the npm scripts; no build step, no ts-node).
 
 ```bash
 npm install
