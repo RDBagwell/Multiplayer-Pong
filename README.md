@@ -13,9 +13,9 @@
 
 *Screenshots captured from real matches with Playwright and Chromium (`scripts/screenshots.ts`). There's no GIF: this environment can record WebM video but has no GIF encoder.*
 
-**Play it:** <https://rdbagwell.github.io/Multiplayer-Pong/> once deployed (see [Deploying](docs/DEPLOY.md)). The server sleeps when idle on its free tier; while it wakes up, the page offers a match against the computer that runs entirely in your browser.
+**Play it:** <https://rdbagwell.github.io/NETCODE-PONG/> (how it's deployed: [docs/DEPLOY.md](docs/DEPLOY.md)). The server sleeps when idle on its free tier; while it wakes up, the page offers a match against the computer that runs entirely in your browser.
 
-**Before and after:** this is a rebuild of a 2022 course project, kept at [`v1-original`](https://github.com/RDBagwell/Multiplayer-Pong/tree/a3802b7) (commit `a3802b7`). [`docs/ORIGINAL.md`](docs/ORIGINAL.md) lists what was wrong with it: the players' browsers decided where the ball was, matchmaking broke after one disconnect, and the ball ran faster on faster screens.
+**Before and after:** this is a rebuild of a 2022 course project, kept at [`v1-original`](https://github.com/RDBagwell/NETCODE-PONG/tree/a3802b7) (commit `a3802b7`). [`docs/ORIGINAL.md`](docs/ORIGINAL.md) lists what was wrong with it: the players' browsers decided where the ball was, matchmaking broke after one disconnect, and the ball ran faster on faster screens.
 
 ## What to look at
 

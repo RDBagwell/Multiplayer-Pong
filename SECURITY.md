@@ -65,7 +65,7 @@ With `LAG_COMPENSATION=true`, the server checks a player's paddle at the tick th
 ### Browser hardening
 
 - **CSP** (helmet, for the built client served by the Node server): `default-src 'self'`, `script-src 'self'` (no inline scripts), `style-src 'self'`, `connect-src 'self'` plus the same host's WebSocket, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`, `frame-ancestors 'none'`. helmet also sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and HSTS in production.
-- **GitHub Pages can't set headers.** The Pages build ([`scripts/build-pages.mjs`](scripts/build-pages.mjs)) puts the same policy in a `<meta>` CSP, with `connect-src` narrowed to exactly the game server's `https://` and `wss://` origin from the `GAME_SERVER_URL` repository variable. The build refuses a non-`https://` URL and a page with an inline script. `frame-ancestors` is ignored in a meta tag, so the client also refuses to run inside a frame.
+- **GitHub Pages can't set headers.** The Pages build ([`scripts/build-pages.mjs`](scripts/build-pages.mjs)) puts the same policy in a `<meta>` CSP, with `connect-src` narrowed to exactly the game server's `https://` and `wss://` origin from the `GAME_SERVER_URL` repository variable. The build refuses a non-`https://` or `github.io` URL and a page with an inline script. `frame-ancestors` is ignored in a meta tag, so the client also refuses to run inside a frame.
 - The client builds its DOM with `textContent` only; no server- or user-provided string is ever parsed as HTML. The Socket.io client is bundled, not loaded from a CDN.
 - The client validates what it receives with the same zod schemas, so a malformed message is dropped rather than drawn.
 
