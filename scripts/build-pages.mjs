@@ -26,6 +26,15 @@ if (url.protocol !== "https:") {
     console.error("GAME_SERVER_URL must start with https:// (production must use HTTPS/WSS).");
     process.exit(1);
 }
+// The game server is the Render service, never the Pages site itself: GitHub
+// Pages serves static files only, so a page pointed at it would wait forever.
+if (url.hostname === "github.io" || url.hostname.endsWith(".github.io")) {
+    console.error(
+        `GAME_SERVER_URL points at GitHub Pages (${url.hostname}), which can't run the game server. ` +
+            "Set it to the Render service URL, e.g. https://netcode-pong-server.onrender.com."
+    );
+    process.exit(1);
+}
 const origin = url.origin; // drops any path, query or trailing slash
 const wsOrigin = origin.replace(/^https:/, "wss:");
 const out = path.resolve(process.env.PAGES_OUT || "_site");

@@ -44,4 +44,10 @@ describe("GitHub Pages build", () => {
         expect(http.ok).toBe(false);
         expect(http.ok ? "" : http.stderr).toContain("must start with https://");
     });
+
+    it("refuses a GitHub Pages address as the game server", () => {
+        const pages = build("https://rdbagwell.github.io/NETCODE-PONG/");
+        expect(pages.ok).toBe(false);
+        expect(pages.ok ? "" : pages.stderr).toContain("points at GitHub Pages");
+    });
 });
